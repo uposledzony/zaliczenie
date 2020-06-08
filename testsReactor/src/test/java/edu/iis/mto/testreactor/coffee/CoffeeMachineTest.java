@@ -58,11 +58,18 @@ class CoffeeMachineTest {
 
     @Test
     void ifCoffeeReceipesGetReceipeMethodReturnedNullReceipeThenCoffeeMachineShouldThrowUnsupportedCoffeeException() {
-        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(null);
         when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
         when(mockGrinder.grind(Mockito.any())).thenReturn(23.0);
         var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
         Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
         assertThrows(UnsupportedCoffeeException.class, invalidMakeCoffeeCall);
+    }
+
+    @Test
+    void ifGrinderCannotGrindCoffeeOfSomeTypeThenCoffeeMachineShouldThrowNoCoffeeBeansExceptionAfterMakeMethodCall() {
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(false);
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+        Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
+        assertThrows(NoCoffeeBeansException.class, invalidMakeCoffeeCall);
     }
 }
