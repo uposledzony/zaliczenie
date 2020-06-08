@@ -1,10 +1,14 @@
 package edu.iis.mto.testreactor.coffee;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProvider;
+import edu.iis.mto.testreactor.coffee.milkprovider.MilkProviderException;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +24,8 @@ import java.util.Map;
 @ExtendWith(MockitoExtension.class)
 class CoffeeMachineTest {
 
+    private static final int NON_ZERO_MILK_AMOUNT = 100;
+    public static final double GRINDED_COFFEE_AMOUNT = 23.0;
     @Mock
     private Grinder mockGrinder;
     @Mock
@@ -82,7 +88,7 @@ class CoffeeMachineTest {
     @Test
     void ifCoffeeReceipesGetReceipeMethodReturnedNullReceipeThenCoffeeMachineShouldThrowUnsupportedCoffeeException() {
         when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
-        when(mockGrinder.grind(Mockito.any())).thenReturn(23.0);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
         var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
         Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
         assertThrows(UnsupportedCoffeeException.class, invalidMakeCoffeeCall);
@@ -100,9 +106,22 @@ class CoffeeMachineTest {
     void ifWaterAmountIsNullInProvidedReceipeCoffeeMachineShouldThrowUnsupportedCoffeeSizeExceptionAfterMakeMethodCall() {
         when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
         when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(faultyReceipe);
-        when(mockGrinder.grind(Mockito.any())).thenReturn(23.0);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
         var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
         Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
         assertThrows(UnsupportedCoffeeSizeException.class, invalidMakeCoffeeCall);
+    }
+
+    @Test
+    void ifMilkProviderThrewExceptionThenCoffeeShouldHaveAmountOfMilkThatIsEqualToZero() throws MilkProviderException {
+        var testedReceipe = CoffeeReceipe.builder().withWaterAmounts(getValidSizes()).withMilkAmount(NON_ZERO_MILK_AMOUNT).build();
+        doThrow(MilkProviderException.class).when(milkProviderMock).heat();
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
+        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(testedReceipe);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+        var coffee = testedMachine.make(defaultOrder);
+
+        assertThat(coffee.getMilkAmout(), is(equalTo(0)));
     }
 }
