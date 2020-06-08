@@ -156,6 +156,17 @@ class CoffeeMachineTest {
         assertThat(expectedCoffee, isCoffee(gotCoffee));
     }
 
+    @Test
+    void ifMilkAmountInReceipeIs0ThenCoffeeShouldHave0Milk() {
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
+        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(defaultTestReceipe);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
+
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+
+        var gotCoffee = testedMachine.make(defaultOrder);
+        assertThat(gotCoffee.getMilkAmout(), is(equalTo(0)));
+    }
 
     private Coffee standardCapuccino(int milkAmount, int waterAmount, double coffeeGrams){
         var c = new Coffee();
