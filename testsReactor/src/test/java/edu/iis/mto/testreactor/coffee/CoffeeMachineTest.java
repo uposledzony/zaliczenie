@@ -14,6 +14,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ExtendWith(MockitoExtension.class)
 class CoffeeMachineTest {
 
@@ -25,12 +28,32 @@ class CoffeeMachineTest {
     private CoffeeReceipes coffeeRecipesMock;
 
     private CoffeeReceipe defaultTestReceipe;
+    private CoffeeReceipe faultyReceipe;
     private CoffeOrder defaultOrder;
-    
+
+    private static Map<CoffeeSize, Integer> getValidSizes() {
+        var map = new HashMap<CoffeeSize, Integer>();
+        map.put(CoffeeSize.STANDARD, 200);
+        map.put(CoffeeSize.SMALL, 100);
+        map.put(CoffeeSize.DOUBLE, 400);
+
+        return map;
+    }
+
+    private static Map<CoffeeSize, Integer> getFaultySizes() {
+        var map = new HashMap<CoffeeSize, Integer>();
+        map.put(CoffeeSize.STANDARD, null);
+        map.put(CoffeeSize.SMALL, null);
+        map.put(CoffeeSize.DOUBLE, null);
+
+        return map;
+    }
+
     @BeforeEach
     void setUp() {
-        defaultTestReceipe = CoffeeReceipe.builder().build();
+        defaultTestReceipe = CoffeeReceipe.builder().withWaterAmounts(getValidSizes()).withMilkAmount(0).build();
         defaultOrder = CoffeOrder.builder().withSize(CoffeeSize.STANDARD).withType(CoffeType.CAPUCCINO).build();
+        faultyReceipe = CoffeeReceipe.builder().withWaterAmounts(getFaultySizes()).withMilkAmount(0).build();
     }
 
     @Test
@@ -49,7 +72,7 @@ class CoffeeMachineTest {
         Executable invalidConstructorCall = () -> new CoffeeMachine(mockGrinder, null, coffeeRecipesMock);
         assertThrows(NullPointerException.class, invalidConstructorCall);
     }
-    
+
     @Test
     void passingNullCoffeeRecipesShouldCauseNPEThrownDuringCoffeeMachineInitialization() {
         Executable invalidConstructorCall = () -> new CoffeeMachine(mockGrinder, milkProviderMock, null);
@@ -71,5 +94,15 @@ class CoffeeMachineTest {
         var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
         Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
         assertThrows(NoCoffeeBeansException.class, invalidMakeCoffeeCall);
+    }
+
+    @Test
+    void ifWaterAmountIsNullInProvidedReceipeCoffeeMachineShouldThrowUnsupportedCoffeeSizeExceptionAfterMakeMethodCall() {
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
+        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(faultyReceipe);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(23.0);
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+        Executable invalidMakeCoffeeCall = () -> testedMachine.make(defaultOrder);
+        assertThrows(UnsupportedCoffeeSizeException.class, invalidMakeCoffeeCall);
     }
 }
