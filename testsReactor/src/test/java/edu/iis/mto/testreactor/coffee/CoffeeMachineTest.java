@@ -4,8 +4,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProvider;
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProviderException;
@@ -123,5 +122,17 @@ class CoffeeMachineTest {
         var coffee = testedMachine.make(defaultOrder);
 
         assertThat(coffee.getMilkAmout(), is(equalTo(0)));
+    }
+
+    @Test
+    void ifMilkAmountInReceipeIsEqualToZeroThenMilkProviderShouldNotBeCalled() throws MilkProviderException {
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
+        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(defaultTestReceipe);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+        testedMachine.make(defaultOrder);
+
+        verify(milkProviderMock, times(0)).heat();
+        verify(milkProviderMock, times(0)).pour(0);
     }
 }
