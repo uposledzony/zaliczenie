@@ -1,5 +1,6 @@
 package edu.iis.mto.testreactor.coffee;
 
+import static edu.iis.mto.testreactor.coffee.CoffeeMatcher.isCoffee;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.*;
 
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProvider;
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProviderException;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,9 @@ class CoffeeMachineTest {
 
     private static final int NON_ZERO_MILK_AMOUNT = 100;
     public static final double GRINDED_COFFEE_AMOUNT = 23.0;
+    public static final int STANDARD_WATER = 200;
+    public static final int SMALL_WATER = 100;
+    public static final int DOUBLE_WATER = 400;
     @Mock
     private Grinder mockGrinder;
     @Mock
@@ -38,9 +43,9 @@ class CoffeeMachineTest {
 
     private static Map<CoffeeSize, Integer> getValidSizes() {
         var map = new HashMap<CoffeeSize, Integer>();
-        map.put(CoffeeSize.STANDARD, 200);
-        map.put(CoffeeSize.SMALL, 100);
-        map.put(CoffeeSize.DOUBLE, 400);
+        map.put(CoffeeSize.STANDARD, STANDARD_WATER);
+        map.put(CoffeeSize.SMALL, SMALL_WATER);
+        map.put(CoffeeSize.DOUBLE, DOUBLE_WATER);
 
         return map;
     }
@@ -134,5 +139,29 @@ class CoffeeMachineTest {
 
         verify(milkProviderMock, times(0)).heat();
         verify(milkProviderMock, times(0)).pour(0);
+    }
+
+    @Test
+    void coffeeMachineShouldMakeStandardCapuccinoWithAmountOfWaterEqualStandardWaterAmountAndNonZeroMilkAmountAndCoffeeGrams() {
+        var expectedCoffee = standardCapuccino(NON_ZERO_MILK_AMOUNT, STANDARD_WATER, GRINDED_COFFEE_AMOUNT);
+        var testedReceipe = CoffeeReceipe.builder().withWaterAmounts(getValidSizes()).withMilkAmount(NON_ZERO_MILK_AMOUNT).build();
+        when(mockGrinder.canGrindFor(Mockito.any())).thenReturn(true);
+        when(coffeeRecipesMock.getReceipe(Mockito.any())).thenReturn(testedReceipe);
+        when(mockGrinder.grind(Mockito.any())).thenReturn(GRINDED_COFFEE_AMOUNT);
+
+        var testedMachine = new CoffeeMachine(mockGrinder, milkProviderMock, coffeeRecipesMock);
+
+        var gotCoffee = testedMachine.make(defaultOrder);
+
+        assertThat(expectedCoffee, isCoffee(gotCoffee));
+    }
+
+
+    private Coffee standardCapuccino(int milkAmount, int waterAmount, double coffeeGrams){
+        var c = new Coffee();
+        c.setMilkAmout(milkAmount);
+        c.setCoffeeWeigthGr(coffeeGrams);
+        c.setWaterAmount(waterAmount);
+        return c;
     }
 }
