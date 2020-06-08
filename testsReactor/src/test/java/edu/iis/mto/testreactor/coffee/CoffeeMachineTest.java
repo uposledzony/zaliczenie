@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import edu.iis.mto.testreactor.coffee.milkprovider.MilkProvider;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
@@ -17,6 +18,15 @@ class CoffeeMachineTest {
     private MilkProvider milkProviderMock;
     @Mock
     private CoffeeReceipes coffeeRecipesMock;
+
+    private CoffeeReceipe defaultTestReceipe;
+    private CoffeOrder defaultOrder;
+    
+    @BeforeEach
+    void setUp() {
+        defaultTestReceipe = CoffeeReceipe.builder().build();
+        defaultOrder = CoffeOrder.builder().build();
+    }
 
     @Test
     public void itCompiles() {
@@ -39,5 +49,7 @@ class CoffeeMachineTest {
         Executable invalidConstructorCall = () -> new CoffeeMachine(mockGrinder, milkProviderMock, null);
         assertThrows(NullPointerException.class, invalidConstructorCall);
     }
+
+
 
 }
